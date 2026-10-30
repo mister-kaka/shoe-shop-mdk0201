@@ -29,7 +29,12 @@ async function api(url, body) {
   } catch (error) {
     throw new Error('Нет связи с сервером');
   }
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw new Error('Сервер вернул непонятный ответ');
+  }
   if (!response.ok) {
     throw new Error(data.error || 'Ошибка запроса');
   }
@@ -41,8 +46,7 @@ let toastTimer = null;
 function toast(message, type) {
   const box = $('toast');
   box.textContent = message;
-  box.classList.toggle('error', type === 'error');
-  box.classList.remove('hidden');
+  box.className = 'toast ' + (type || 'success');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function () {
     box.classList.add('hidden');
@@ -106,7 +110,11 @@ async function login(event) {
   event.preventDefault();
   const loginText = $('login-input').value.trim();
   if (loginText === '') {
-    toast('Введите логин', 'error');
+    toast('Введите логин', 'warning');
+    return;
+  }
+  if (!/^[A-Za-z0-9_]+$/.test(loginText)) {
+    toast('Логин состоит только из латинских букв, цифр и знака _', 'warning');
     return;
   }
   try {
@@ -297,7 +305,7 @@ function closeProduct() {
 function addToCart() {
   const checked = document.querySelector('input[name="size"]:checked');
   if (!checked) {
-    toast('Выберите размер', 'error');
+    toast('Выберите размер', 'warning');
     return;
   }
   const size = state.product.sizes.find(function (s) {
@@ -305,11 +313,11 @@ function addToCart() {
   });
   const quantity = Number($('qty-input').value);
   if (!Number.isInteger(quantity) || quantity < 1) {
-    toast('Количество должно быть целым числом от 1', 'error');
+    toast('Количество должно быть целым числом от 1', 'warning');
     return;
   }
   if (quantity > size.quantity) {
-    toast('На складе только ' + size.quantity + ' шт. этого размера', 'error');
+    toast('На складе только ' + size.quantity + ' шт. этого размера', 'warning');
     return;
   }
   const same = state.cart.find(function (item) {
@@ -317,7 +325,7 @@ function addToCart() {
   });
   if (same) {
     if (same.quantity + quantity > size.quantity) {
-      toast('В корзине уже ' + same.quantity + ' шт., больше ' + size.quantity + ' на складе нет', 'error');
+      toast('В корзине уже ' + same.quantity + ' шт., больше ' + size.quantity + ' на складе нет', 'warning');
       return;
     }
     same.quantity += quantity;
@@ -374,6 +382,9 @@ function renderCart() {
 }
 
 function removeFromCart(stockId) {
+  if (!confirm('Убрать товар из корзины?')) {
+    return;
+  }
   state.cart = state.cart.filter(function (item) {
     return item.stock_id !== stockId;
   });
@@ -383,11 +394,11 @@ function removeFromCart(stockId) {
 
 async function makeOrder() {
   if (state.cart.length === 0) {
-    toast('Корзина пуста', 'error');
+    toast('Корзина пуста', 'warning');
     return;
   }
   if (!state.user) {
-    toast('Войдите в систему, чтобы оформить заказ', 'error');
+    toast('Войдите в систему, чтобы оформить заказ', 'warning');
     return;
   }
   const items = state.cart.map(function (item) {

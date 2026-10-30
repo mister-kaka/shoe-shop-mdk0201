@@ -39,6 +39,7 @@ class Handler(BaseHTTPRequestHandler):
         if url_path == '/':
             url_path = '/index.html'
         full_path = os.path.normpath(os.path.join(STATIC_DIR, url_path.lstrip('/')))
+        # не отдаём файлы за пределами static (../)
         if not full_path.startswith(STATIC_DIR + os.sep) or not os.path.isfile(full_path):
             self.send_json({'error': 'Файл не найден'}, 404)
             return
@@ -97,6 +98,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         except sqlite3.Error as error:
             self.send_json({'error': 'Ошибка базы данных: {}'.format(error)}, 500)
+            return
+        except Exception:
+            self.send_json({'error': 'Внутренняя ошибка сервера'}, 500)
             return
         self.send_json(result)
 

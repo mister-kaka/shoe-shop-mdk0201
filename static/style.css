@@ -148,6 +148,11 @@ button.secondary:hover {
   background: #c0392b;
 }
 
+.toast.warning {
+  color: #1f3d3b;
+  background: #f0c040;
+}
+
 .hidden {
   display: none !important;
 }
