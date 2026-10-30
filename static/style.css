@@ -151,3 +151,53 @@ button.secondary:hover {
 .hidden {
   display: none !important;
 }
+
+label {
+  display: block;
+  margin-bottom: 4px;
+}
+
+input[type="text"], input[type="date"], input[type="number"], select {
+  padding: 7px 12px;
+  font-family: inherit;
+  font-size: 17px;
+  border: 2px solid #d2f6e7;
+  border-radius: 12px;
+}
+
+#login-input {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(31, 61, 59, 0.45);
+}
+
+.modal-body {
+  width: 760px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow: auto;
+  padding: 24px 28px;
+  background: #ffffff;
+  border-radius: 24px;
+}
+
+.modal-body.small {
+  width: 380px;
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}

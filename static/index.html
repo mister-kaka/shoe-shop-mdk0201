@@ -29,7 +29,12 @@
   <main>
     <section id="welcome" class="card">
       <h2>Добро пожаловать</h2>
-      <p id="welcome-text">Каркас страницы готов: шапка, состояние пользователя и проверка связи с сервером.</p>
+      <p id="welcome-text"></p>
+    </section>
+
+    <section id="orders-box" class="card hidden">
+      <h2>Заказы</h2>
+      <p>Здесь будет список заказов (следующая работа, ПР 3.1).</p>
     </section>
   </main>
 
@@ -37,6 +42,18 @@
     <span id="server-status"></span>
     <button id="check-btn" class="secondary">Проверить связь</button>
   </footer>
+
+  <div id="login-modal" class="modal hidden">
+    <form id="login-form" class="modal-body small">
+      <h2>Вход</h2>
+      <label for="login-input">Логин</label>
+      <input id="login-input" type="text" placeholder="например, isivanov" autocomplete="off">
+      <div class="buttons">
+        <button type="submit">Войти</button>
+        <button type="button" id="login-cancel" class="secondary">Отмена</button>
+      </div>
+    </form>
+  </div>
 
   <div id="toast" class="toast hidden"></div>
   <script src="app.js"></script>
