@@ -11,6 +11,7 @@
   <header class="header">
     <img class="logo" src="logo.png" alt="Чудо Обувь">
     <h1>Чудо Обувь</h1>
+    <div id="userbar"></div>
   </header>
 
   <section class="hero">
@@ -26,10 +27,18 @@
   </section>
 
   <main>
-    <section class="card">
-      <h2>Сервер работает</h2>
-      <p>Эта страница отдана модулем http.server из папки static.</p>
+    <section id="welcome" class="card">
+      <h2>Добро пожаловать</h2>
+      <p id="welcome-text">Каркас страницы готов: шапка, состояние пользователя и проверка связи с сервером.</p>
     </section>
   </main>
+
+  <footer class="status">
+    <span id="server-status"></span>
+    <button id="check-btn" class="secondary">Проверить связь</button>
+  </footer>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="app.js"></script>
 </body>
 </html>

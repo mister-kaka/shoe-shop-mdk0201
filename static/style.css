@@ -95,3 +95,59 @@ main {
     height: 90px;
   }
 }
+
+button {
+  padding: 8px 20px;
+  font-family: inherit;
+  font-size: 17px;
+  color: #1f3d3b;
+  background: #70b2af;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #5da19e;
+}
+
+button.secondary {
+  background: #d2f6e7;
+}
+
+button.secondary:hover {
+  background: #bfeedb;
+}
+
+#userbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 16px 24px;
+}
+
+.toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  padding: 12px 22px;
+  color: #ffffff;
+  background: #3a8f8b;
+  border-radius: 16px;
+}
+
+.toast.error {
+  background: #c0392b;
+}
+
+.hidden {
+  display: none !important;
+}
