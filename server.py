@@ -68,6 +68,7 @@ class Handler(BaseHTTPRequestHandler):
         routes['/api/login'] = self.api_login
         routes['/api/products'] = self.api_products
         routes['/api/product'] = self.api_product
+        routes['/api/categories'] = self.api_categories
         if url.path.startswith('/api/'):
             self.run_api(routes.get(url.path), params)
         else:
@@ -183,6 +184,14 @@ class Handler(BaseHTTPRequestHandler):
         product['price_final'] = final_price(row['price'], product['discount'])
         product['sizes'] = sorted([dict(s) for s in sizes], key=lambda s: float(s['value']))
         return product
+
+    def api_categories(self, params):
+        conn = connect()
+        try:
+            rows = conn.execute('SELECT name FROM Categories ORDER BY id').fetchall()
+            return [row['name'] for row in rows]
+        finally:
+            conn.close()
 
 def make_fio(row):
     parts = [row['last_name'], row['first_name'], row['middle_name']]

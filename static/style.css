@@ -201,3 +201,55 @@ input[type="text"], input[type="date"], input[type="number"], select {
   gap: 10px;
   justify-content: flex-end;
 }
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+#search-input {
+  flex: 1;
+  min-width: 220px;
+}
+
+.products {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 16px;
+}
+
+.product {
+  padding: 12px;
+  border: 2px solid #d2f6e7;
+  border-radius: 18px;
+}
+
+.product img {
+  display: block;
+  width: 100%;
+  height: 150px;
+  object-fit: contain;
+}
+
+.product h3 {
+  margin: 8px 0;
+  font-size: 17px;
+}
+
+.product p {
+  margin: 4px 0;
+}
+
+.product.low {
+  background: #ff8080;
+}
+
+.stock {
+  font-size: 15px;
+}
+
+s {
+  color: #c0392b;
+}

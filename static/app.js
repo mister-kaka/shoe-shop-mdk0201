@@ -1,6 +1,11 @@
 const state = {
   user: null,
   page: 'home',
+  products: [],
+  category: '',
+  search: '',
+  sort: '',
+  product: null,
   serverOk: null
 };
 
@@ -41,6 +46,10 @@ function toast(message, type) {
   toastTimer = setTimeout(function () {
     box.classList.add('hidden');
   }, 3000);
+}
+
+function money(value) {
+  return Number(value).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function isStaff() {
@@ -113,6 +122,11 @@ function showOrders() {
   render();
 }
 
+function showCatalog() {
+  state.page = 'home';
+  render();
+}
+
 function addButton(parent, text, onClick, className) {
   const button = document.createElement('button');
   button.textContent = text;
@@ -134,6 +148,7 @@ function renderHeader() {
   name.textContent = state.user.fio + ' (' + state.user.role + ')';
   bar.append(name);
   if (isStaff()) {
+    addButton(bar, 'Каталог', showCatalog, 'secondary');
     addButton(bar, 'Заказы', showOrders);
   }
   addButton(bar, 'Выйти', logout, 'secondary');
@@ -154,11 +169,91 @@ function render() {
   const onOrders = isStaff() && state.page === 'orders';
   $('welcome').classList.toggle('hidden', onOrders);
   $('orders-box').classList.toggle('hidden', !onOrders);
+  $('catalog').classList.toggle('hidden', onOrders);
   $('welcome-text').textContent = getWelcomeText();
+}
+
+async function loadCategories() {
+  try {
+    const names = await api('/api/categories');
+    const select = $('category-select');
+    select.append(new Option('Все категории', ''));
+    for (const name of names) {
+      select.append(new Option(name, name));
+    }
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
+async function loadProducts() {
+  const params = new URLSearchParams({ category: state.category, search: state.search, sort: state.sort });
+  try {
+    state.products = await api('/api/products?' + params);
+    renderCatalog();
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
+function priceBlock(parent, product) {
+  if (product.discount) {
+    const old = document.createElement('s');
+    old.textContent = money(product.price) + ' руб.';
+    parent.append(old, ' ');
+  }
+  const now = document.createElement('b');
+  now.textContent = money(product.price_final) + ' руб.';
+  parent.append(now);
+}
+
+function renderCatalog() {
+  const list = $('catalog-list');
+  list.textContent = '';
+  $('catalog-empty').classList.toggle('hidden', state.products.length > 0);
+  for (const product of state.products) {
+    const card = document.createElement('div');
+    card.className = 'product';
+    if (product.level === 'мало') {
+      card.classList.add('low');
+    }
+    const img = document.createElement('img');
+    img.src = 'uploads/' + product.image;
+    const name = document.createElement('h3');
+    name.textContent = product.name;
+    const info = document.createElement('p');
+    info.textContent = product.category + ', ' + product.manufacturer;
+    const price = document.createElement('p');
+    priceBlock(price, product);
+    const stock = document.createElement('p');
+    stock.className = 'stock';
+    stock.textContent = 'На складе: ' + product.total + ' шт. (' + product.level + ')';
+    card.append(img, name, info, price, stock);
+    list.append(card);
+  }
 }
 
 $('check-btn').addEventListener('click', checkServer);
 $('login-form').addEventListener('submit', login);
 $('login-cancel').addEventListener('click', closeLogin);
+$('category-select').addEventListener('change', function (event) {
+  state.category = event.target.value;
+  loadProducts();
+});
+$('sort-select').addEventListener('change', function (event) {
+  state.sort = event.target.value;
+  loadProducts();
+});
+
+let searchTimer = null;
+$('search-input').addEventListener('input', function (event) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(function () {
+    state.search = event.target.value.trim();
+    loadProducts();
+  }, 300);
+});
 render();
+loadCategories();
+loadProducts();
 checkServer();

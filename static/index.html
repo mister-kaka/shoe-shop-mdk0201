@@ -36,6 +36,20 @@
       <h2>Заказы</h2>
       <p>Здесь будет список заказов (следующая работа, ПР 3.1).</p>
     </section>
+    <section id="catalog" class="card">
+      <h2>Каталог</h2>
+      <div class="filters">
+        <select id="category-select"></select>
+        <input id="search-input" type="text" placeholder="Поиск по названию, производителю, описанию">
+        <select id="sort-select">
+          <option value="">Без сортировки</option>
+          <option value="price_asc">Цена по возрастанию</option>
+          <option value="price_desc">Цена по убыванию</option>
+        </select>
+      </div>
+      <p id="catalog-empty" class="hidden">Ничего не найдено</p>
+      <div id="catalog-list" class="products"></div>
+    </section>
   </main>
 
   <footer class="status">
