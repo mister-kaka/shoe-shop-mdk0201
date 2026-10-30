@@ -67,11 +67,27 @@ def group_products():
     show_products('/api/products?category=' + quote('Мужская обувь') + '&search=' + quote('ботинки') + '&sort=price_desc')
     show_products('/api/products?search=' + quote('такого товара нет'))
 
+def show_product(product_id):
+    card = call('GET', '/api/product?id=' + product_id, show_body=False)
+    if card is None or 'error' in card:
+        print('  ' + str(card))
+        print()
+        return
+    print('  {} ({}, {})'.format(card['name'], card['category'], card['manufacturer']))
+    print('  цена {} -> {}, скидка: {}'.format(card['price'], card['price_final'], 'да' if card['discount'] else 'нет'))
+    print('  размеры:', ', '.join('{}:{}'.format(z['value'], z['quantity']) for z in card['sizes']))
+    print()
+
+def group_product():
+    for product_id in ('1', '14', '29', '9999', 'abc'):
+        show_product(product_id)
+
 GROUPS = {
     'static': group_static,
     'echo': group_echo,
     'login': group_login,
     'products': group_products,
+    'product': group_product,
 }
 
 if __name__ == '__main__':

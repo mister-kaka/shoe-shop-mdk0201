@@ -67,6 +67,7 @@ class Handler(BaseHTTPRequestHandler):
         routes = {}
         routes['/api/login'] = self.api_login
         routes['/api/products'] = self.api_products
+        routes['/api/product'] = self.api_product
         if url.path.startswith('/api/'):
             self.run_api(routes.get(url.path), params)
         else:
@@ -156,6 +157,32 @@ class Handler(BaseHTTPRequestHandler):
         elif sort == 'price_desc':
             products.sort(key=lambda x: x['price_final'], reverse=True)
         return products
+
+    def api_product(self, params):
+        try:
+            product_id = int(params.get('id', ''))
+        except ValueError:
+            raise ApiError(400, 'Нужен числовой параметр id')
+        conn = connect()
+        try:
+            row = conn.execute(
+                'SELECT p.id, p.name, p.subcategory, p.description, p.composition, p.price, p.image, '
+                'c.name AS category, m.name AS manufacturer '
+                'FROM Products p JOIN Categories c ON c.id = p.category_id '
+                'JOIN Manufacturers m ON m.id = p.manufacturer_id WHERE p.id = ?', (product_id,)).fetchone()
+            if row is None:
+                raise ApiError(404, 'Товар не найден')
+            sizes = conn.execute(
+                'SELECT s.id AS stock_id, z.value, s.quantity FROM Stock s JOIN Sizes z ON z.id = s.size_id '
+                'WHERE s.product_id = ?', (product_id,)).fetchall()
+            ordered = ordered_last_month(conn)
+        finally:
+            conn.close()
+        product = dict(row)
+        product['discount'] = product_id not in ordered
+        product['price_final'] = final_price(row['price'], product['discount'])
+        product['sizes'] = sorted([dict(s) for s in sizes], key=lambda s: float(s['value']))
+        return product
 
 def make_fio(row):
     parts = [row['last_name'], row['first_name'], row['middle_name']]
