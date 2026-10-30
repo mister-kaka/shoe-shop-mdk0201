@@ -38,6 +38,7 @@ def call(method, path, body=None, show_body=True):
 
 def group_static():
     call('GET', '/', show_body=False)
+    call('GET', '/app.js', show_body=False)
     call('GET', '/style.css', show_body=False)
     call('GET', '/logo.png', show_body=False)
     call('GET', '/net-takogo-faila.html')
@@ -82,12 +83,24 @@ def group_product():
     for product_id in ('1', '14', '29', '9999', 'abc'):
         show_product(product_id)
 
+def group_create():
+    before = call('GET', '/api/product?id=2', show_body=False)
+    stock = before['sizes'][0]
+    print('Остаток размера {} до заказа: {}\n'.format(stock['value'], stock['quantity']))
+    call('POST', '/api/order/create', {'login': 'asidorova', 'items': [{'stock_id': stock['stock_id'], 'quantity': 1}]})
+    after = call('GET', '/api/product?id=2', show_body=False)
+    print('Остаток размера {} после заказа: {}\n'.format(stock['value'], after['sizes'][0]['quantity']))
+    call('POST', '/api/order/create', {'login': 'asidorova', 'items': [{'stock_id': stock['stock_id'], 'quantity': 500}]})
+    call('POST', '/api/order/create', {'login': 'asidorova', 'items': []})
+    call('POST', '/api/order/create', {'login': 'nobody', 'items': [{'stock_id': stock['stock_id'], 'quantity': 1}]})
+
 GROUPS = {
     'static': group_static,
     'echo': group_echo,
     'login': group_login,
     'products': group_products,
     'product': group_product,
+    'create': group_create,
 }
 
 if __name__ == '__main__':

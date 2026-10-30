@@ -94,6 +94,24 @@
     </div>
   </div>
 
+  <div id="cart-modal" class="modal hidden">
+    <div class="modal-body">
+      <h2>Корзина</h2>
+      <p id="cart-empty">В корзине пока ничего нет.</p>
+      <table id="cart-table">
+        <thead>
+          <tr><th>Товар</th><th>Размер</th><th>Кол-во</th><th>Цена</th><th>Сумма</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p class="total">Итого: <span id="cart-total">0,00</span> руб.</p>
+      <div class="buttons">
+        <button id="make-order-btn">Оформить заказ</button>
+        <button id="cart-close" class="secondary">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="toast hidden"></div>
   <script src="app.js"></script>
 </body>

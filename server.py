@@ -2,6 +2,7 @@ import json
 import mimetypes
 import os
 import sqlite3
+from datetime import date
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlparse
 
@@ -77,6 +78,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         url = urlparse(self.path)
         routes = {'/api/echo': self.api_echo}
+        routes['/api/order/create'] = self.api_order_create
         try:
             data = self.read_json()
         except ApiError as error:
@@ -190,6 +192,43 @@ class Handler(BaseHTTPRequestHandler):
         try:
             rows = conn.execute('SELECT name FROM Categories ORDER BY id').fetchall()
             return [row['name'] for row in rows]
+        finally:
+            conn.close()
+
+    def api_order_create(self, data):
+        items = data.get('items')
+        if not isinstance(items, list) or len(items) == 0:
+            raise ApiError(400, 'Корзина пуста')
+        conn = connect()
+        try:
+            if not data.get('login'):
+                raise ApiError(401, 'Войдите в систему, чтобы оформить заказ')
+            user = self.get_user(conn, data.get('login'))
+            user_id = user['id']
+            ordered = ordered_last_month(conn)
+            try:
+                cur = conn.execute('INSERT INTO Orders (order_date, user_id) VALUES (?, ?)', (date.today().isoformat(), user_id))
+                order_id = cur.lastrowid
+                for item in items:
+                    quantity = item.get('quantity')
+                    if not isinstance(quantity, int) or quantity <= 0:
+                        raise ApiError(400, 'Количество должно быть целым числом больше нуля')
+                    stock = conn.execute('SELECT s.id, s.quantity, p.id AS product_id, p.name, p.price '
+                                         'FROM Stock s JOIN Products p ON p.id = s.product_id WHERE s.id = ?',
+                                         (item.get('stock_id'),)).fetchone()
+                    if stock is None:
+                        raise ApiError(404, 'Позиция склада не найдена')
+                    if stock['quantity'] < quantity:
+                        raise ApiError(400, 'Не хватает товара на складе: {} (есть {})'.format(stock['name'], stock['quantity']))
+                    price = final_price(stock['price'], stock['product_id'] not in ordered)
+                    conn.execute('UPDATE Stock SET quantity = quantity - ? WHERE id = ?', (quantity, stock['id']))
+                    conn.execute('INSERT INTO OrderItems (order_id, stock_id, quantity, unit_price) VALUES (?, ?, ?, ?)',
+                                 (order_id, stock['id'], quantity, price))
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+            return {'ok': True, 'order_id': order_id}
         finally:
             conn.close()
 

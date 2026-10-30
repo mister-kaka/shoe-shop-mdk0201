@@ -273,3 +273,27 @@ s {
   display: inline-block;
   margin-right: 14px;
 }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid #d2f6e7;
+}
+
+th {
+  background: #d2f6e7;
+}
+
+td.num {
+  text-align: right;
+}
+
+.total {
+  font-weight: bold;
+  text-align: right;
+}
