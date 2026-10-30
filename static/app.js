@@ -207,6 +207,14 @@ function priceBlock(parent, product) {
   parent.append(now);
 }
 
+function setImage(img, name) {
+  img.onerror = function () {
+    img.onerror = null;
+    img.src = 'uploads/picture.png';
+  };
+  img.src = 'uploads/' + name;
+}
+
 function renderCatalog() {
   const list = $('catalog-list');
   list.textContent = '';
@@ -218,7 +226,7 @@ function renderCatalog() {
       card.classList.add('low');
     }
     const img = document.createElement('img');
-    img.src = 'uploads/' + product.image;
+    setImage(img, product.image);
     const name = document.createElement('h3');
     name.textContent = product.name;
     const info = document.createElement('p');
@@ -229,8 +237,72 @@ function renderCatalog() {
     stock.className = 'stock';
     stock.textContent = 'На складе: ' + product.total + ' шт. (' + product.level + ')';
     card.append(img, name, info, price, stock);
+    card.addEventListener('click', function () {
+      openProduct(product.id);
+    });
     list.append(card);
   }
+}
+
+async function openProduct(id) {
+  try {
+    state.product = await api('/api/product?id=' + id);
+    renderProduct();
+    $('product-modal').classList.remove('hidden');
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
+function renderProduct() {
+  const product = state.product;
+  setImage($('product-img'), product.image);
+  $('product-name').textContent = product.name;
+  $('product-meta').textContent = product.category + ' / ' + product.subcategory + '. Производитель: ' + product.manufacturer;
+  $('product-descr').textContent = product.description;
+  $('product-composition').textContent = 'Состав: ' + product.composition;
+  $('product-price').textContent = '';
+  priceBlock($('product-price'), product);
+  const box = $('size-list');
+  box.textContent = '';
+  for (const size of product.sizes) {
+    const label = document.createElement('label');
+    label.className = 'size';
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'size';
+    radio.value = size.stock_id;
+    radio.disabled = size.quantity === 0;
+    label.append(radio, ' ' + size.value + ' (' + size.quantity + ' шт.)');
+    box.append(label);
+  }
+  $('qty-input').value = 1;
+}
+
+function closeProduct() {
+  $('product-modal').classList.add('hidden');
+}
+
+function addToCart() {
+  const checked = document.querySelector('input[name="size"]:checked');
+  if (!checked) {
+    toast('Выберите размер', 'error');
+    return;
+  }
+  const size = state.product.sizes.find(function (s) {
+    return String(s.stock_id) === checked.value;
+  });
+  const quantity = Number($('qty-input').value);
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    toast('Количество должно быть целым числом от 1', 'error');
+    return;
+  }
+  if (quantity > size.quantity) {
+    toast('На складе только ' + size.quantity + ' шт. этого размера', 'error');
+    return;
+  }
+  toast('Выбрано: ' + state.product.name + ', размер ' + size.value + ', ' + quantity + ' шт.');
+  closeProduct();
 }
 
 $('check-btn').addEventListener('click', checkServer);
@@ -253,6 +325,8 @@ $('search-input').addEventListener('input', function (event) {
     loadProducts();
   }, 300);
 });
+$('add-btn').addEventListener('click', addToCart);
+$('product-close').addEventListener('click', closeProduct);
 render();
 loadCategories();
 loadProducts();

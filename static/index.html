@@ -69,6 +69,31 @@
     </form>
   </div>
 
+  <div id="product-modal" class="modal hidden">
+    <div class="modal-body">
+      <div class="product-view">
+        <img id="product-img" alt="">
+        <div>
+          <h2 id="product-name"></h2>
+          <p id="product-meta"></p>
+          <p id="product-descr"></p>
+          <p id="product-composition"></p>
+          <p id="product-price"></p>
+        </div>
+      </div>
+      <h3>Размер</h3>
+      <div id="size-list"></div>
+      <p>
+        <label for="qty-input">Количество:</label>
+        <input id="qty-input" type="number" value="1" min="1">
+      </p>
+      <div class="buttons">
+        <button id="add-btn">Добавить в корзину</button>
+        <button id="product-close" class="secondary">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="toast hidden"></div>
   <script src="app.js"></script>
 </body>

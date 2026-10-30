@@ -253,3 +253,23 @@ input[type="text"], input[type="date"], input[type="number"], select {
 s {
   color: #c0392b;
 }
+
+.product {
+  cursor: pointer;
+}
+
+.product-view {
+  display: flex;
+  gap: 20px;
+}
+
+.product-view img {
+  width: 240px;
+  height: 240px;
+  object-fit: contain;
+}
+
+.size {
+  display: inline-block;
+  margin-right: 14px;
+}
