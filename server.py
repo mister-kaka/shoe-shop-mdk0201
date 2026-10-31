@@ -1,4 +1,5 @@
 import json
+import logging
 import mimetypes
 import os
 import sqlite3
@@ -14,8 +15,12 @@ PORT = 8000
 # заказы в файле за апрель и май 2026, поэтому сегодня для скидок беру из этих данных
 TODAY = '2026-05-20'
 DISCOUNT = 0.25
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s', datefmt='%H:%M:%S')
+log = logging.getLogger('server')
 
 def connect():
+    if not os.path.isfile(DB_PATH):
+        raise ApiError(500, 'Файл базы данных shop.db не найден')
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute('PRAGMA foreign_keys = ON')
@@ -94,12 +99,15 @@ class Handler(BaseHTTPRequestHandler):
         try:
             result = func(data)
         except ApiError as error:
+            log.warning('%s: %s', self.path, error.message)
             self.send_json({'error': error.message}, error.status)
             return
         except sqlite3.Error as error:
+            log.error('%s: ошибка базы данных: %s', self.path, error)
             self.send_json({'error': 'Ошибка базы данных: {}'.format(error)}, 500)
             return
         except Exception:
+            log.exception('%s: непредвиденная ошибка', self.path)
             self.send_json({'error': 'Внутренняя ошибка сервера'}, 500)
             return
         self.send_json(result)

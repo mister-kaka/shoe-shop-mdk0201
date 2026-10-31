@@ -94,6 +94,16 @@ def group_create():
     call('POST', '/api/order/create', {'login': 'asidorova', 'items': []})
     call('POST', '/api/order/create', {'login': 'nobody', 'items': [{'stock_id': stock['stock_id'], 'quantity': 1}]})
 
+def group_robust():
+    call('GET', '/api/products?sort=' + quote('что-то'), show_body=False)
+    call('GET', '/api/product?id=')
+    call('GET', '/api/login?login=')
+    call('POST', '/api/order/create', {'login': 'asidorova', 'items': [{'stock_id': 3, 'quantity': '5'}]})
+    call('POST', '/api/order/create', {'login': 'asidorova', 'items': [{'stock_id': 3, 'quantity': -1}]})
+    call('POST', '/api/order/create', {'login': 'asidorova', 'items': 'всё'})
+    call('POST', '/api/order/create', {})
+    call('GET', '/uploads/' + quote('нет-такой-картинки.png'))
+
 GROUPS = {
     'static': group_static,
     'echo': group_echo,
@@ -101,6 +111,7 @@ GROUPS = {
     'products': group_products,
     'product': group_product,
     'create': group_create,
+    'robust': group_robust,
 }
 
 if __name__ == '__main__':
