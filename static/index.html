@@ -34,7 +34,12 @@
 
     <section id="orders-box" class="card hidden">
       <h2>Заказы</h2>
-      <p>Здесь будет список заказов (следующая работа, ПР 3.1).</p>
+      <table id="orders-table">
+        <thead>
+          <tr><th>№</th><th>Дата</th><th>ФИО клиента</th><th>Сумма, руб.</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </section>
     <section id="catalog" class="card">
       <h2>Каталог</h2>
@@ -67,6 +72,27 @@
         <button type="button" id="login-cancel" class="secondary">Отмена</button>
       </div>
     </form>
+  </div>
+
+  <div id="order-modal" class="modal hidden">
+    <div class="modal-body">
+      <h2 id="order-title"></h2>
+      <p id="order-fio"></p>
+      <p>
+        <label for="order-date">Дата заказа:</label>
+        <input id="order-date" type="date" disabled>
+      </p>
+      <table id="items-table">
+        <thead>
+          <tr><th>Товар</th><th>Размер</th><th>Кол-во</th><th>Цена</th><th>Сумма</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p class="total">Итого: <span id="order-total"></span> руб.</p>
+      <div class="buttons">
+        <button id="close-btn" class="secondary">Закрыть</button>
+      </div>
+    </div>
   </div>
 
   <div id="product-modal" class="modal hidden">

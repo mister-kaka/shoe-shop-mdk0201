@@ -7,6 +7,7 @@ const state = {
   sort: '',
   product: null,
   cart: [],
+  order: null,
   serverOk: null
 };
 
@@ -138,6 +139,7 @@ function logout() {
 function showOrders() {
   state.page = 'orders';
   render();
+  loadOrders();
 }
 
 function showCatalog() {
@@ -416,6 +418,58 @@ async function makeOrder() {
   }
 }
 
+async function loadOrders() {
+  try {
+    const orders = await api('/api/orders?login=' + encodeURIComponent(state.user.login));
+    const tbody = $('orders-table').querySelector('tbody');
+    tbody.textContent = '';
+    for (const order of orders) {
+      const row = document.createElement('tr');
+      row.append(makeCell(order.id));
+      row.append(makeCell(order.order_date));
+      row.append(makeCell(order.fio));
+      row.append(makeCell(money(order.total), 'num'));
+      const buttonCell = document.createElement('td');
+      addButton(buttonCell, 'Открыть', function () {
+        openOrder(order.id);
+      });
+      row.append(buttonCell);
+      tbody.append(row);
+    }
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
+async function openOrder(id) {
+  try {
+    state.order = await api('/api/order?id=' + id + '&login=' + encodeURIComponent(state.user.login));
+    renderOrder();
+    $('order-modal').classList.remove('hidden');
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
+function renderOrder() {
+  const order = state.order;
+  $('order-title').textContent = 'Заказ № ' + order.id;
+  $('order-fio').textContent = 'Клиент: ' + order.fio;
+  $('order-date').value = order.order_date;
+  const tbody = $('items-table').querySelector('tbody');
+  tbody.textContent = '';
+  for (const item of order.items) {
+    const row = document.createElement('tr');
+    row.append(makeCell(item.product));
+    row.append(makeCell(item.size));
+    row.append(makeCell(item.quantity, 'num'));
+    row.append(makeCell(money(item.unit_price), 'num'));
+    row.append(makeCell(money(item.sum), 'num'));
+    tbody.append(row);
+  }
+  $('order-total').textContent = money(order.total);
+}
+
 $('check-btn').addEventListener('click', checkServer);
 $('login-form').addEventListener('submit', login);
 $('login-cancel').addEventListener('click', closeLogin);
@@ -440,6 +494,9 @@ $('add-btn').addEventListener('click', addToCart);
 $('product-close').addEventListener('click', closeProduct);
 $('make-order-btn').addEventListener('click', makeOrder);
 $('cart-close').addEventListener('click', closeCart);
+$('close-btn').addEventListener('click', function () {
+  $('order-modal').classList.add('hidden');
+});
 render();
 loadCategories();
 loadProducts();

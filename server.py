@@ -15,6 +15,7 @@ PORT = 8000
 # заказы в файле за апрель и май 2026, поэтому сегодня для скидок беру из этих данных
 TODAY = '2026-05-20'
 DISCOUNT = 0.25
+STAFF_ROLES = ('Менеджер', 'Администратор')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s', datefmt='%H:%M:%S')
 log = logging.getLogger('server')
 
@@ -76,6 +77,8 @@ class Handler(BaseHTTPRequestHandler):
         routes['/api/products'] = self.api_products
         routes['/api/product'] = self.api_product
         routes['/api/categories'] = self.api_categories
+        routes['/api/orders'] = self.api_orders
+        routes['/api/order'] = self.api_order
         if url.path.startswith('/api/'):
             self.run_api(routes.get(url.path), params)
         else:
@@ -241,6 +244,56 @@ class Handler(BaseHTTPRequestHandler):
                 conn.rollback()
                 raise
             return {'ok': True, 'order_id': order_id}
+        finally:
+            conn.close()
+
+    def require_role(self, conn, login, roles):
+        user = self.get_user(conn, login)
+        if user['role'] not in roles:
+            raise ApiError(403, 'Недостаточно прав')
+
+    def api_orders(self, params):
+        conn = connect()
+        try:
+            self.require_role(conn, params.get('login'), STAFF_ROLES)
+            rows = conn.execute(
+                'SELECT o.id, o.order_date, u.last_name, u.first_name, u.middle_name, '
+                'COALESCE((SELECT SUM(quantity * unit_price) FROM OrderItems WHERE order_id = o.id), 0) AS total '
+                'FROM Orders o JOIN Users u ON u.id = o.user_id ORDER BY o.id').fetchall()
+            orders = []
+            for row in rows:
+                orders.append({'id': row['id'], 'order_date': row['order_date'], 'fio': make_fio(row), 'total': row['total']})
+            return orders
+        finally:
+            conn.close()
+
+    def api_order(self, params):
+        try:
+            order_id = int(params.get('id', ''))
+        except ValueError:
+            raise ApiError(400, 'Нужен числовой параметр id')
+        conn = connect()
+        try:
+            self.require_role(conn, params.get('login'), STAFF_ROLES)
+            order = conn.execute(
+                'SELECT o.id, o.order_date, u.last_name, u.first_name, u.middle_name '
+                'FROM Orders o JOIN Users u ON u.id = o.user_id WHERE o.id = ?', (order_id,)).fetchone()
+            if order is None:
+                raise ApiError(404, 'Заказ не найден')
+            rows = conn.execute(
+                'SELECT oi.id, p.name AS product, z.value AS size, oi.quantity, oi.unit_price, '
+                'oi.quantity * oi.unit_price AS sum '
+                'FROM OrderItems oi '
+                'JOIN Stock s ON s.id = oi.stock_id '
+                'JOIN Products p ON p.id = s.product_id '
+                'JOIN Sizes z ON z.id = s.size_id '
+                'WHERE oi.order_id = ? ORDER BY oi.id', (order_id,)).fetchall()
+            items = []
+            total = 0
+            for row in rows:
+                items.append(dict(row))
+                total += row['sum']
+            return {'id': order['id'], 'order_date': order['order_date'], 'fio': make_fio(order), 'items': items, 'total': total}
         finally:
             conn.close()
 

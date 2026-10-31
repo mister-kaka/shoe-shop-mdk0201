@@ -52,6 +52,12 @@ def group_login():
         call('GET', '/api/login?login=' + login)
     call('GET', '/api/login?login=nobody')
 
+def group_orders():
+    call('GET', '/api/orders?login=papetrov')
+    call('GET', '/api/order?id=1&login=papetrov')
+    call('GET', '/api/orders?login=asidorova')
+    call('GET', '/api/orders?login=nobody')
+
 def show_products(path, limit=4):
     items = call('GET', path, show_body=False)
     print('  товаров в ответе:', len(items))
@@ -108,6 +114,7 @@ GROUPS = {
     'static': group_static,
     'echo': group_echo,
     'login': group_login,
+    'orders': group_orders,
     'products': group_products,
     'product': group_product,
     'create': group_create,
