@@ -10,6 +10,8 @@ const state = {
   order: null,
   date: '',
   removed: [],
+  newItems: [],
+  picked: null,
   serverOk: null
 };
 
@@ -517,6 +519,118 @@ async function saveOrder() {
   }
 }
 
+async function openNewOrder() {
+  state.newItems = [];
+  state.picked = null;
+  $('np-search').value = '';
+  $('np-qty').value = 1;
+  try {
+    const users = await api('/api/users?login=' + encodeURIComponent(state.user.login));
+    const select = $('client-select');
+    select.textContent = '';
+    for (const user of users) {
+      select.append(new Option(user.fio, user.id));
+    }
+    await findProducts();
+    renderNewItems();
+    $('new-order-modal').classList.remove('hidden');
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
+async function findProducts() {
+  const text = $('np-search').value.trim();
+  const found = await api('/api/products?search=' + encodeURIComponent(text));
+  const select = $('np-product');
+  select.textContent = '';
+  for (const product of found) {
+    select.append(new Option(product.name, product.id));
+  }
+  $('np-size').textContent = '';
+  state.picked = null;
+}
+
+async function pickProduct() {
+  const id = $('np-product').value;
+  if (!id) {
+    return;
+  }
+  try {
+    state.picked = await api('/api/product?id=' + id);
+    const select = $('np-size');
+    select.textContent = '';
+    for (const size of state.picked.sizes) {
+      if (size.quantity > 0) {
+        select.append(new Option(size.value + ' (осталось ' + size.quantity + ')', size.stock_id));
+      }
+    }
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
+function addNewItem() {
+  const product = state.picked;
+  const stockId = Number($('np-size').value);
+  const quantity = Number($('np-qty').value);
+  if (!product || !stockId) {
+    toast('Выбериет товар и размер', 'warning');
+    return;
+  }
+  const size = product.sizes.find(function (s) {
+    return s.stock_id === stockId;
+  });
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > size.quantity) {
+    toast('Количество: целое число от 1 до ' + size.quantity, 'warning');
+    return;
+  }
+  state.newItems.push({ stock_id: stockId, name: product.name, size: size.value, quantity: quantity, price: product.price_final });
+  renderNewItems();
+}
+
+function renderNewItems() {
+  const tbody = $('new-items-table').querySelector('tbody');
+  tbody.textContent = '';
+  let total = 0;
+  state.newItems.forEach(function (item, index) {
+    total += item.price * item.quantity;
+    const row = document.createElement('tr');
+    row.append(makeCell(item.name));
+    row.append(makeCell(item.size));
+    row.append(makeCell(item.quantity, 'num'));
+    row.append(makeCell(money(item.price * item.quantity), 'num'));
+    const buttonCell = document.createElement('td');
+    addButton(buttonCell, 'Убрать', function () {
+      state.newItems.splice(index, 1);
+      renderNewItems();
+    }, 'danger');
+    row.append(buttonCell);
+    tbody.append(row);
+  });
+  $('new-order-total').textContent = money(total);
+}
+
+async function saveNewOrder() {
+  if (state.newItems.length === 0) {
+    toast('Добавьте в заказ хотя бы одну позицию', 'warning');
+    return;
+  }
+  const items = state.newItems.map(function (item) {
+    return { stock_id: item.stock_id, quantity: item.quantity };
+  });
+  try {
+    const data = { login: state.user.login, user_id: Number($('client-select').value), items: items };
+    const answer = await api('/api/order/create', data);
+    $('new-order-modal').classList.add('hidden');
+    toast('Заказ № ' + answer.order_id + ' создан');
+    loadOrders();
+    loadProducts();
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
 $('check-btn').addEventListener('click', checkServer);
 $('login-form').addEventListener('submit', login);
 $('login-cancel').addEventListener('click', closeLogin);
@@ -548,6 +662,18 @@ $('order-date').addEventListener('change', function (event) {
   state.date = event.target.value;
 });
 $('save-btn').addEventListener('click', saveOrder);
+$('new-order-btn').addEventListener('click', openNewOrder);
+$('np-search').addEventListener('input', function () {
+  findProducts().catch(function (error) {
+    toast(error.message, 'error');
+  });
+});
+$('np-product').addEventListener('change', pickProduct);
+$('np-add').addEventListener('click', addNewItem);
+$('np-save').addEventListener('click', saveNewOrder);
+$('np-cancel').addEventListener('click', function () {
+  $('new-order-modal').classList.add('hidden');
+});
 render();
 loadCategories();
 loadProducts();

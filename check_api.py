@@ -113,6 +113,15 @@ def group_create():
     call('POST', '/api/order/create', {'login': 'asidorova', 'items': []})
     call('POST', '/api/order/create', {'login': 'nobody', 'items': [{'stock_id': stock['stock_id'], 'quantity': 1}]})
 
+def group_staff():
+    call('GET', '/api/users?login=papetrov', show_body=False)
+    call('GET', '/api/users?login=asidorova')
+    call('POST', '/api/order/create', {'login': 'papetrov', 'user_id': 5, 'items': [{'stock_id': 3, 'quantity': 1}]})
+    orders = call('GET', '/api/orders?login=papetrov', show_body=False)
+    print('  последний заказ в списке:', orders[-1])
+    print()
+    call('POST', '/api/order/create', {'login': 'papetrov', 'user_id': 9999, 'items': [{'stock_id': 3, 'quantity': 1}]})
+
 def group_robust():
     call('GET', '/api/products?sort=' + quote('что-то'), show_body=False)
     call('GET', '/api/product?id=')
@@ -132,6 +141,7 @@ GROUPS = {
     'products': group_products,
     'product': group_product,
     'create': group_create,
+    'staff': group_staff,
     'robust': group_robust,
 }
 

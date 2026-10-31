@@ -79,6 +79,7 @@ class Handler(BaseHTTPRequestHandler):
         routes['/api/categories'] = self.api_categories
         routes['/api/orders'] = self.api_orders
         routes['/api/order'] = self.api_order
+        routes['/api/users'] = self.api_users
         if url.path.startswith('/api/'):
             self.run_api(routes.get(url.path), params)
         else:
@@ -221,6 +222,12 @@ class Handler(BaseHTTPRequestHandler):
                 raise ApiError(401, 'Войдите в систему, чтобы оформить заказ')
             user = self.get_user(conn, data.get('login'))
             user_id = user['id']
+            # менеджер и администратор могут оформить заказ на другого клиента
+            if data.get('user_id') and user['role'] in STAFF_ROLES:
+                client = conn.execute('SELECT id FROM Users WHERE id = ?', (data.get('user_id'),)).fetchone()
+                if client is None:
+                    raise ApiError(404, 'Клиент не найден')
+                user_id = client['id']
             ordered = ordered_last_month(conn)
             try:
                 cur = conn.execute('INSERT INTO Orders (order_date, user_id) VALUES (?, ?)', (date.today().isoformat(), user_id))
@@ -330,6 +337,15 @@ class Handler(BaseHTTPRequestHandler):
                 conn.rollback()
                 raise
             return {'ok': True}
+        finally:
+            conn.close()
+
+    def api_users(self, params):
+        conn = connect()
+        try:
+            self.require_role(conn, params.get('login'), STAFF_ROLES)
+            rows = conn.execute('SELECT id, last_name, first_name, middle_name FROM Users ORDER BY last_name, first_name').fetchall()
+            return [{'id': row['id'], 'fio': make_fio(row)} for row in rows]
         finally:
             conn.close()
 

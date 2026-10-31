@@ -40,6 +40,7 @@
         </thead>
         <tbody></tbody>
       </table>
+      <p><button id="new-order-btn">Добавить заказ</button></p>
     </section>
     <section id="catalog" class="card">
       <h2>Каталог</h2>
@@ -135,6 +136,39 @@
       <div class="buttons">
         <button id="make-order-btn">Оформить заказ</button>
         <button id="cart-close" class="secondary">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="new-order-modal" class="modal hidden">
+    <div class="modal-body">
+      <h2>Новый заказ</h2>
+      <p>
+        <label for="client-select">Клиент</label>
+        <select id="client-select"></select>
+      </p>
+      <p>
+        <label for="np-search">Поиск товара по названию</label>
+        <input id="np-search" type="text" placeholder="например, кроссовки">
+      </p>
+      <select id="np-product" size="5"></select>
+      <p>
+        <label for="np-size">Размер</label>
+        <select id="np-size"></select>
+        <label for="np-qty">Количество</label>
+        <input id="np-qty" type="number" value="1" min="1">
+        <button id="np-add" class="secondary">Добавить позицию</button>
+      </p>
+      <table id="new-items-table">
+        <thead>
+          <tr><th>Товар</th><th>Размер</th><th>Кол-во</th><th>Сумма</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p class="total">Итого: <span id="new-order-total">0,00</span> руб.</p>
+      <div class="buttons">
+        <button id="np-save">Сохранить заказ</button>
+        <button id="np-cancel" class="secondary">Отмена</button>
       </div>
     </div>
   </div>
