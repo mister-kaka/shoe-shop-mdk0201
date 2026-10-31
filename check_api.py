@@ -58,6 +58,19 @@ def group_orders():
     call('GET', '/api/orders?login=asidorova')
     call('GET', '/api/orders?login=nobody')
 
+def group_update():
+    order = call('GET', '/api/order?id=2&login=isivanov', show_body=False)
+    old_date = order['order_date']
+    print('Дата заказа 2 до изменения:', old_date, '\n')
+    call('POST', '/api/order/update', {'login': 'isivanov', 'order_id': 2, 'order_date': '2026-05-20'})
+    changed = call('GET', '/api/order?id=2&login=isivanov', show_body=False)
+    print('Дата заказа 2 после изменения:', changed['order_date'], '\n')
+    call('POST', '/api/order/update', {'login': 'papetrov', 'order_id': 2, 'order_date': '2026-05-21'})
+    call('POST', '/api/order/update', {'login': 'isivanov', 'order_id': 2, 'order_date': '20.05.2026'})
+    call('POST', '/api/order/update', {'login': 'isivanov', 'order_id': 2, 'remove_items': [9999]})
+
+    call('POST', '/api/order/update', {'login': 'isivanov', 'order_id': 2, 'order_date': old_date})
+
 def show_products(path, limit=4):
     items = call('GET', path, show_body=False)
     print('  товаров в ответе:', len(items))
@@ -115,6 +128,7 @@ GROUPS = {
     'echo': group_echo,
     'login': group_login,
     'orders': group_orders,
+    'update': group_update,
     'products': group_products,
     'product': group_product,
     'create': group_create,

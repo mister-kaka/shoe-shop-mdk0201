@@ -88,6 +88,7 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         routes = {'/api/echo': self.api_echo}
         routes['/api/order/create'] = self.api_order_create
+        routes['/api/order/update'] = self.api_order_update
         try:
             data = self.read_json()
         except ApiError as error:
@@ -294,6 +295,41 @@ class Handler(BaseHTTPRequestHandler):
                 items.append(dict(row))
                 total += row['sum']
             return {'id': order['id'], 'order_date': order['order_date'], 'fio': make_fio(order), 'items': items, 'total': total}
+        finally:
+            conn.close()
+
+    def api_order_update(self, data):
+        order_id = data.get('order_id')
+        new_date = data.get('order_date')
+        remove_items = data.get('remove_items') or []
+        if not isinstance(order_id, int):
+            raise ApiError(400, 'Не указан номер заказа')
+        if new_date is not None:
+            try:
+                date.fromisoformat(new_date)
+            except (TypeError, ValueError):
+                raise ApiError(400, 'Дата должна быть в формате ГГГГ-ММ-ДД')
+        conn = connect()
+        try:
+            self.require_role(conn, data.get('login'), ('Администратор',))
+            if conn.execute('SELECT 1 FROM Orders WHERE id = ?', (order_id,)).fetchone() is None:
+                raise ApiError(404, 'Заказ не найден')
+            try:
+                if new_date is not None:
+                    conn.execute('UPDATE Orders SET order_date = ? WHERE id = ?', (new_date, order_id))
+                for item_id in remove_items:
+                    item = conn.execute('SELECT stock_id, quantity FROM OrderItems WHERE id = ? AND order_id = ?',
+                                        (item_id, order_id)).fetchone()
+                    if item is None:
+                        raise ApiError(404, 'Позиция {} не найдена в этом заказе'.format(item_id))
+                    # товар возвращаем на склад
+                    conn.execute('UPDATE Stock SET quantity = quantity + ? WHERE id = ?', (item['quantity'], item['stock_id']))
+                    conn.execute('DELETE FROM OrderItems WHERE id = ?', (item_id,))
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+            return {'ok': True}
         finally:
             conn.close()
 

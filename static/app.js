@@ -8,6 +8,8 @@ const state = {
   product: null,
   cart: [],
   order: null,
+  date: '',
+  removed: [],
   serverOk: null
 };
 
@@ -72,6 +74,10 @@ function isStaff() {
     return false;
   }
   return state.user.role === 'Менеджер' || state.user.role === 'Администратор';
+}
+
+function isAdmin() {
+  return state.user !== null && state.user.role === 'Администратор';
 }
 
 function showStatus() {
@@ -444,6 +450,8 @@ async function loadOrders() {
 async function openOrder(id) {
   try {
     state.order = await api('/api/order?id=' + id + '&login=' + encodeURIComponent(state.user.login));
+    state.date = state.order.order_date;
+    state.removed = [];
     renderOrder();
     $('order-modal').classList.remove('hidden');
   } catch (error) {
@@ -455,19 +463,58 @@ function renderOrder() {
   const order = state.order;
   $('order-title').textContent = 'Заказ № ' + order.id;
   $('order-fio').textContent = 'Клиент: ' + order.fio;
-  $('order-date').value = order.order_date;
+  $('order-date').value = state.date;
+  $('order-date').disabled = !isAdmin();
+  $('save-btn').classList.toggle('hidden', !isAdmin());
   const tbody = $('items-table').querySelector('tbody');
   tbody.textContent = '';
+  let total = 0;
   for (const item of order.items) {
+    if (state.removed.includes(item.id)) {
+      continue;
+    }
+    total += item.sum;
     const row = document.createElement('tr');
     row.append(makeCell(item.product));
     row.append(makeCell(item.size));
     row.append(makeCell(item.quantity, 'num'));
     row.append(makeCell(money(item.unit_price), 'num'));
     row.append(makeCell(money(item.sum), 'num'));
+    const buttonCell = document.createElement('td');
+    if (isAdmin()) {
+      addButton(buttonCell, 'Удалить', function () {
+        removeItem(item.id);
+      }, 'danger');
+    }
+    row.append(buttonCell);
     tbody.append(row);
   }
-  $('order-total').textContent = money(order.total);
+  $('order-total').textContent = money(total);
+}
+
+function removeItem(itemId) {
+  if (!confirm('Удалить позицию из заказа? Товар вернётся на склад.')) {
+    return;
+  }
+  state.removed.push(itemId);
+  renderOrder();
+}
+
+async function saveOrder() {
+  const data = {
+    login: state.user.login,
+    order_id: state.order.id,
+    order_date: state.date,
+    remove_items: state.removed
+  };
+  try {
+    await api('/api/order/update', data);
+    toast('Изменения сохранены');
+    $('order-modal').classList.add('hidden');
+    loadOrders();
+  } catch (error) {
+    toast(error.message, 'error');
+  }
 }
 
 $('check-btn').addEventListener('click', checkServer);
@@ -497,6 +544,10 @@ $('cart-close').addEventListener('click', closeCart);
 $('close-btn').addEventListener('click', function () {
   $('order-modal').classList.add('hidden');
 });
+$('order-date').addEventListener('change', function (event) {
+  state.date = event.target.value;
+});
+$('save-btn').addEventListener('click', saveOrder);
 render();
 loadCategories();
 loadProducts();

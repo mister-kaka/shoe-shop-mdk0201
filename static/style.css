@@ -303,3 +303,12 @@ td.num {
   font-weight: bold;
   text-align: right;
 }
+
+button.danger {
+  color: #ffffff;
+  background: #c0392b;
+}
+
+button.danger:hover {
+  background: #a93226;
+}
